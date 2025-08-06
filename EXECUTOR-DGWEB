@@ -1,0 +1,146 @@
+javascript:(()=>{
+  if(document.getElementById('dgweb-executor-panel')){
+    alert('DG WEB Executor já está aberto!');
+    return;
+  }
+  if(!localStorage.dgweb_verified){
+    const verifyOverlay=document.createElement('div');
+    Object.assign(verifyOverlay.style,{
+      position:'fixed',top:'0',left:'0',width:'100vw',height:'100vh',
+      background:'black',zIndex:'9999999',display:'flex',
+      justifyContent:'center',alignItems:'center',flexDirection:'column',
+      color:'red',fontFamily:'monospace'
+    });
+    const title=document.createElement('h1');
+    title.textContent='🔥 DG WEB EXECUTOR 🔥';
+    title.style.marginBottom='20px';
+    const btnVerify=document.createElement('button');
+    btnVerify.textContent='VERIFICAR VIA DISCORD';
+    Object.assign(btnVerify.style,{
+      background:'red',color:'black',fontWeight:'bold',padding:'12px 24px',
+      border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'16px'
+    });
+    btnVerify.onclick=()=>{
+      window.open('https://discord.gg/ZUEGShtyQg','_blank');
+      statusMsg.textContent='Fazendo verificação na entrada do servidor...';
+      setTimeout(()=>{
+        localStorage.dgweb_verified='true';
+        document.body.removeChild(verifyOverlay);
+        openExecutor();
+      },60000);
+    };
+    const statusMsg=document.createElement('p');
+    statusMsg.style.marginTop='20px';
+    verifyOverlay.appendChild(title);
+    verifyOverlay.appendChild(btnVerify);
+    verifyOverlay.appendChild(statusMsg);
+    document.body.appendChild(verifyOverlay);
+  } else {
+    openExecutor();
+  }
+
+  function openExecutor(){
+    const panel=document.createElement('div');
+    panel.id='dgweb-executor-panel';
+    Object.assign(panel.style,{
+      position:'fixed',top:'0',left:'0',
+      width:'100vw',height:'100vh',
+      background:'black',border:'4px solid red',borderRadius:'0',
+      boxSizing:'border-box',
+      boxShadow:'0 0 15px red',zIndex:'9999999',
+      fontFamily:'monospace',color:'red',
+      display:'flex',flexDirection:'column'
+    });
+
+    // Header container (titulo + botoes)
+    const header=document.createElement('div');
+    Object.assign(header.style,{
+      display:'flex',justifyContent:'space-between',alignItems:'center',
+      padding:'10px 16px',borderBottom:'2px solid red',position:'relative'
+    });
+
+    const title=document.createElement('div');
+    title.textContent='DG WEB EXECUTOR';
+    title.style.fontWeight='bold';
+    title.style.fontSize='22px';
+    header.appendChild(title);
+
+    const buttonsContainer=document.createElement('div');
+    buttonsContainer.style.display='flex';
+    buttonsContainer.style.gap='8px';
+
+    const btnMin=document.createElement('button');
+    btnMin.textContent='−';
+    Object.assign(btnMin.style,{
+      background:'red',color:'black',border:'none',fontWeight:'bold',
+      cursor:'pointer',width:'32px',height:'32px',borderRadius:'6px',
+      fontSize:'22px',lineHeight:'22px',padding:'0'
+    });
+    btnMin.title='Minimizar';
+    btnMin.onclick=()=>{
+      panel.style.display='none';
+      btnMax.style.display='flex';
+    };
+
+    const btnClose=document.createElement('button');
+    btnClose.textContent='×';
+    Object.assign(btnClose.style,{
+      background:'red',color:'black',border:'none',fontWeight:'bold',
+      cursor:'pointer',width:'32px',height:'32px',borderRadius:'6px',
+      fontSize:'22px',lineHeight:'22px',padding:'0'
+    });
+    btnClose.title='Fechar';
+    btnClose.onclick=()=>{
+      localStorage.removeItem('dgweb_verified');
+      panel.remove();
+      btnMax.remove();
+    };
+
+    buttonsContainer.appendChild(btnMin);
+    buttonsContainer.appendChild(btnClose);
+    header.appendChild(buttonsContainer);
+
+    panel.appendChild(header);
+
+    const textarea=document.createElement('textarea');
+    Object.assign(textarea.style,{
+      flex:'1',resize:'none',background:'black',color:'red',
+      border:'2px solid red',padding:'16px',fontSize:'16px',
+      fontFamily:'monospace',outline:'none',width:'100%',boxSizing:'border-box'
+    });
+    panel.appendChild(textarea);
+
+    const btnExec=document.createElement('button');
+    btnExec.textContent='Executar';
+    Object.assign(btnExec.style,{
+      background:'red',color:'black',border:'none',fontWeight:'bold',
+      cursor:'pointer',padding:'14px',fontSize:'18px',borderRadius:'0',
+      width:'100%',boxSizing:'border-box'
+    });
+    btnExec.onclick=()=>{
+      try{
+        eval(textarea.value);
+      }catch(e){
+        alert('Erro ao executar script:\n'+e);
+      }
+    };
+    panel.appendChild(btnExec);
+
+    document.body.appendChild(panel);
+
+    const btnMax=document.createElement('button');
+    btnMax.textContent='DG';
+    Object.assign(btnMax.style,{
+      position:'fixed',top:'10px',right:'10px',width:'42px',height:'42px',
+      borderRadius:'50%',background:'red',color:'black',fontWeight:'bold',
+      border:'none',cursor:'pointer',fontSize:'22px',display:'none',
+      alignItems:'center',justifyContent:'center',zIndex:'99999999'
+    });
+    btnMax.title='Maximizar executor';
+    btnMax.onclick=()=>{
+      panel.style.display='flex';
+      btnMax.style.display='none';
+    };
+    document.body.appendChild(btnMax);
+  }
+})();
