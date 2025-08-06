@@ -45,18 +45,18 @@ javascript:(()=>{
     Object.assign(panel.style,{
       position:'fixed',top:'0',left:'0',
       width:'100vw',height:'100vh',
-      background:'black',border:'4px solid red',borderRadius:'0',
+      background:'black',border:'4px solid red',
       boxSizing:'border-box',
       boxShadow:'0 0 15px red',zIndex:'9999999',
       fontFamily:'monospace',color:'red',
       display:'flex',flexDirection:'column'
     });
 
-    // Header container (titulo + botoes)
+    // Header
     const header=document.createElement('div');
     Object.assign(header.style,{
       display:'flex',justifyContent:'space-between',alignItems:'center',
-      padding:'10px 16px',borderBottom:'2px solid red',position:'relative'
+      padding:'10px 16px',borderBottom:'2px solid red'
     });
 
     const title=document.createElement('div');
@@ -74,9 +74,8 @@ javascript:(()=>{
     Object.assign(btnMin.style,{
       background:'red',color:'black',border:'none',fontWeight:'bold',
       cursor:'pointer',width:'32px',height:'32px',borderRadius:'6px',
-      fontSize:'22px',lineHeight:'22px',padding:'0'
+      fontSize:'22px'
     });
-    btnMin.title='Minimizar';
     btnMin.onclick=()=>{
       panel.style.display='none';
       btnMax.style.display='flex';
@@ -87,9 +86,8 @@ javascript:(()=>{
     Object.assign(btnClose.style,{
       background:'red',color:'black',border:'none',fontWeight:'bold',
       cursor:'pointer',width:'32px',height:'32px',borderRadius:'6px',
-      fontSize:'22px',lineHeight:'22px',padding:'0'
+      fontSize:'22px'
     });
-    btnClose.title='Fechar';
     btnClose.onclick=()=>{
       localStorage.removeItem('dgweb_verified');
       panel.remove();
@@ -99,17 +97,20 @@ javascript:(()=>{
     buttonsContainer.appendChild(btnMin);
     buttonsContainer.appendChild(btnClose);
     header.appendChild(buttonsContainer);
-
     panel.appendChild(header);
 
+    // Caixa de texto (reduzida para caber o botão)
     const textarea=document.createElement('textarea');
     Object.assign(textarea.style,{
       flex:'1',resize:'none',background:'black',color:'red',
       border:'2px solid red',padding:'16px',fontSize:'16px',
-      fontFamily:'monospace',outline:'none',width:'100%',boxSizing:'border-box'
+      fontFamily:'monospace',outline:'none',width:'100%',
+      height:'calc(100% - 140px)', // reduz altura p/ caber botão
+      boxSizing:'border-box'
     });
     panel.appendChild(textarea);
 
+    // Botão executar (sempre visível)
     const btnExec=document.createElement('button');
     btnExec.textContent='Executar';
     Object.assign(btnExec.style,{
@@ -121,7 +122,7 @@ javascript:(()=>{
       try{
         eval(textarea.value);
       }catch(e){
-        alert('Erro ao executar script:\n'+e);
+        alert('Erro ao executar script:\\n'+e);
       }
     };
     panel.appendChild(btnExec);
@@ -136,7 +137,6 @@ javascript:(()=>{
       border:'none',cursor:'pointer',fontSize:'22px',display:'none',
       alignItems:'center',justifyContent:'center',zIndex:'99999999'
     });
-    btnMax.title='Maximizar executor';
     btnMax.onclick=()=>{
       panel.style.display='flex';
       btnMax.style.display='none';
